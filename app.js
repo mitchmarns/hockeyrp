@@ -12,7 +12,8 @@ const teams = [
     ],
     points: 0,
     wins: 0,
-    losses: 0
+    losses: 0,
+    gamesPlayed: 0
   },
   {
     name: 'Team 2',
@@ -24,7 +25,8 @@ const teams = [
     ],
     points: 0,
     wins: 0,
-    losses: 0
+    losses: 0,
+    gamesPlayed: 0
   },
   {
     name: 'Team 3',
@@ -36,7 +38,8 @@ const teams = [
     ],
     points: 0,
     wins: 0,
-    losses: 0
+    losses: 0,
+    gamesPlayed: 0
   },
   {
     name: 'Team 4',
@@ -48,9 +51,31 @@ const teams = [
     ],
     points: 0,
     wins: 0,
-    losses: 0
+    losses: 0,
+    gamesPlayed: 0
   }
 ];
+
+// Generate schedule: 82 games for each team
+let schedule = [];
+function generateSchedule() {
+  let date = new Date(2024, 0, 1); // Start date of the season (January 1, 2024)
+
+  for (let i = 0; i < 82; i++) { // 82 games per team
+    for (let j = 0; j < teams.length; j++) {
+      for (let k = j + 1; k < teams.length; k++) {
+        schedule.push({
+          team1: teams[j],
+          team2: teams[k],
+          date: new Date(date), // Copy the date object
+        });
+      }
+    }
+    date.setDate(date.getDate() + 1); // Increment the date by 1 day
+  }
+}
+
+generateSchedule();
 
 // Display teams and players
 function displayTeams() {
@@ -68,7 +93,8 @@ function displayTeams() {
 }
 
 // Simulate a game between two teams
-function simulateGame(team1, team2) {
+function simulateGame(game) {
+  const { team1, team2, date } = game;
   let score1 = 0;
   let score2 = 0;
 
@@ -102,37 +128,26 @@ function simulateGame(team1, team2) {
     console.log(`${injuredPlayer.name} from ${team2.name} got injured!`);
   }
 
-  // Update wins/losses
+  // Update wins/losses and points
   if (score1 > score2) {
     team1.wins++;
     team2.losses++;
     team1.points += 3; // 3 points for a win
-    return { winner: team1, score: `${score1} - ${score2}` };
+    team1.gamesPlayed++;
   } else {
     team2.wins++;
     team1.losses++;
     team2.points += 3; // 3 points for a win
-    return { winner: team2, score: `${score2} - ${score1}` };
-  }
-}
-
-// Simulate the full season
-function simulateSeason() {
-  let results = [];
-
-  for (let i = 0; i < teams.length; i++) {
-    for (let j = i + 1; j < teams.length; j++) {
-      const team1 = teams[i];
-      const team2 = teams[j];
-      const gameResult = simulateGame(team1, team2);
-      results.push(`${team1.name} vs ${team2.name}: Winner - ${gameResult.winner.name} (${gameResult.score})`);
-    }
+    team2.gamesPlayed++;
   }
 
-  // Sort teams by points
-  teams.sort((a, b) => b.points - a.points);
-
-  return results;
+  return {
+    date: date.toDateString(),
+    team1: team1.name,
+    team2: team2.name,
+    score: `${score1} - ${score2}`,
+    winner: score1 > score2 ? team1.name : team2.name,
+  };
 }
 
 // Display the leaderboard
@@ -148,23 +163,41 @@ function displayLeaderboard() {
   }).join('');
 }
 
-// Simulate the final game
-function simulateFinal() {
-  const finalTeams = teams.slice(0, 2); // Assuming top 2 teams for the final
-  const gameResult = simulateGame(finalTeams[0], finalTeams[1]);
-  return `${finalTeams[0].name} vs ${finalTeams[1].name}: Winner - ${gameResult.winner.name} (${gameResult.score})`;
-}
-
-// Event listeners
+// Simulate the next game
+let currentGameIndex = 0;
 document.getElementById('simulateBtn').addEventListener('click', () => {
-  const seasonResults = simulateSeason();
-  document.getElementById('seasonResults').innerHTML = seasonResults.join('<br>');
-  displayLeaderboard();
+  if (currentGameIndex < schedule.length) {
+    const game = schedule[currentGameIndex];
+    const gameResult = simulateGame(game);
+    
+    // Display the result of the game
+    document.getElementById('gameResult').innerHTML = `
+      <div class="game-result">
+        ${gameResult.date}: ${gameResult.team1} vs ${gameResult.team2} - ${gameResult.score} <br> Winner: ${gameResult.winner}
+      </div>
+    `;
+    
+    // Update the leaderboard
+    displayLeaderboard();
+    
+    currentGameIndex++;
+  } else {
+    document.getElementById('gameResult').innerHTML = 'The season is complete!';
+  }
 });
 
+// Simulate the final game (top 2 teams)
 document.getElementById('simulateFinalBtn').addEventListener('click', () => {
-  const finalResult = simulateFinal();
-  document.getElementById('finalResult').innerHTML = finalResult;
+  const topTeams = teams.slice(0, 2);  // Top 2 teams for the final
+  const finalGame = simulateGame({
+    team1: topTeams[0],
+    team2: topTeams[1],
+    date: new Date(2024, 5, 15),
+  });
+
+  document.getElementById('finalResult').innerHTML = `
+    Final: ${finalGame.date} - ${finalGame.team1} vs ${finalGame.team2} - ${finalGame.score} <br> Winner: ${finalGame.winner}
+  `;
 });
 
 // Initialize the page
